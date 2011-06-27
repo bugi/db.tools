@@ -1,0 +1,16 @@
+- how to install maatkit -
+- (for use with db tool) -
+
+Go to
+	http://code.google.com/p/maatkit/
+
+Look at Featured Downloads.  Select the URL of the .tar.gz one.  Get it with wget.
+
+
+
+tar xfz maatkit-*.tar.gz
+cd maatkit-*
+perl Makefile.PL PREFIX=$(readlink -f $(pwd)/../maatkit)
+make install
+cd ..
+rm -rf maatkit-*     # delete the tarball and the untared directory
