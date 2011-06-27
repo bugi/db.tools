@@ -1,0 +1,58 @@
+# vim: set filetype=sh:
+
+function cli_mysql () {
+	local args=()
+	local BASEDIR
+	eval "$( extract_from_mycnf "$MYCNF" basedir )"
+	if [ "$1" = exec ]
+	then
+		args+=( "$1" )
+		shift
+	fi
+	if [ "$1" = mysql ]
+	then
+		args+=( "$BASEDIR/bin/$1" )
+		shift
+	elif [ "$1" = mysqladmin ]
+	then
+		args+=( "$BASEDIR/bin/$1" )
+		shift
+	elif [ "$1" = mysqldump ]
+	then
+		args+=( "$BASEDIR/bin/$1" )
+		shift
+	elif [ "$1" = mysqlimport ]
+	then
+		args+=( "$BASEDIR/bin/$1" )
+		shift
+	elif [ "$1" = maatkit ]
+	then
+		args+=( "$maatkit_bindir/$1" )
+		shift
+	else
+		args+=( "$BASEDIR/bin/mysql" )
+	fi
+	if [ -n "$SOCKET" ]
+	then
+		args+=( --protocol=SOCKET )
+		args+=( --socket="$SOCKET" )
+	else
+		args+=( --protocol=TCP )
+		args+=( --port="$PORT" )
+	fi
+	# parse $@ for -u --username and -p and --password, and if not present use DBUSER/DBPASSWORD/similar.
+	# keywords of root/readonly/mortal?
+	# remember compgen for the db name that will usually follow cli
+	local UP=()
+	if [ -n "$DBUSER" ]
+	then
+		UP+=( --user="$DBUSER" )
+	fi
+	if [ -n "$DBPASSWORD" ]
+	then
+		UP+=( --password="$DBPASSWORD" )
+	fi
+# cat <<EOF
+	"${args[@]}" "${mysql_args[@]}" "${UP[@]}" "$@" # "$@" is last on purpose
+# EOF
+	}

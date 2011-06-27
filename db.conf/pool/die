@@ -1,0 +1,12 @@
+function warn () {
+	local f
+	for f in "$@"
+	do
+		echo "$f" 1>&2
+	done
+	}
+
+function die () {
+	warn "$@"
+	exit 1
+	}

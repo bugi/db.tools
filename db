@@ -1,0 +1,284 @@
+#!/bin/bash
+# Author:  Brian Grossman <brian@SoftHome.net>
+# 30 Apr 2011	birth
+
+set -e
+
+zero="$(readlink -f "$0")"
+zdir="$(dirname "$zero")"
+confdir="$zero.conf"
+
+
+
+function cf () {
+	local f
+	for f in "$@"
+	do
+		# these -e's are not -r's for a reason.  If the file exists and is not readable by this user, it is an error.
+		if [ -e "$confdir/this/$f" ]
+		then
+			. "$confdir/this/$f"
+		elif [ -e "$confdir/default/$f" ]
+		then
+			. "$confdir/default/$f"
+		elif [ -e "$confdir/pool/$f" ]
+		then
+			. "$confdir/pool/$f"
+		else
+			echo "no such file $f ($confdir)" 1>&2
+			exit 1
+		fi
+	done
+	}
+cf start
+cf die
+
+
+# initialization directives, such as for authentication
+case "$1" in
+	(auth-cli|auth_cli)
+		shift
+		auth_cli "$1" ; shift
+		;;
+	(auth-env|auth_env)
+		shift
+		auth_env "$1" ; shift
+		;;
+	(auth-set|auth_set)
+		shift
+		auth_set "$1" ; shift
+		;;
+	(auth-kill|auth_kill|deauth)
+		shift
+		auth_kill
+		;;
+	(auth)
+		shift
+		auth_env "$1" ; shift
+		;;
+esac
+
+if [ -z "$1" ]
+then
+	exit
+fi
+
+# meta directives, such as db discovery or specification of a remote host.
+# if none of the explicit meta directives are matched, the arg is assumed to be the tag or port of a db.
+case "$1" in
+	(--compgen)
+		echo auth auth-cli auth-env auth-set auth-kill deauth
+		echo show-auth remote local ls tag port port-tag tag-port
+		self tag
+		exit
+		;;
+	(show-auth|auth-show)
+		echo --user="$DBUSER" --password="$DBPASSWORD"
+		# example: eval "export $( db auth foo - show-auth )"
+		exit
+		;;
+	(remote) # as in cli will be told --host foo
+		die "$1 not implemented"
+		;;
+	(remotely) # as in ssh to host, then execute again as if local
+		die "$1 not implemented"
+		# don't forget the intricacies of -t -tt -T etc
+		;;
+	('local')
+		shift
+		db_set "$1"
+		shift
+		;;
+	(tag|tags|ls)
+		db_find_tags
+		exit
+		;;
+	(port|ports)
+		db_find_ports
+		exit
+		;;
+	(port-tag|ports-tags|tag-port|tags-ports)
+		db_find_ports_tags
+		exit
+		;;
+	(*)
+		db_set "$1"
+		shift
+		;;
+esac
+
+
+
+arg="$1" ; shift
+case "$arg" in
+	(--compgen)
+		echo info cli tag port socket
+		echo ls db
+		echo pw psw lsps pshost kill
+		echo mycnf mysql_version vsmy 
+		echo budump fulldump fulldump-no-routines dump mysqldump import admin mysqladmin
+		# self "$TAG" ls "$@"
+		if [ -d "$maatkit_bindir"/ ]
+		then
+			ls "$maatkit_bindir"/
+		fi
+		exit
+		;;
+
+	(info) echo TAG:$TAG MYCNF:$MYCNF SOCKET:$SOCKET PORT:$PORT ;;
+	(cli)	cli_mysql exec "$@"
+		exit # redundant, but helps readability
+		;;
+	(tag) echo "$TAG" ; exit ;;
+	(port) echo "$PORT" ; exit ;;
+	(socket) echo "$SOCKET" ; exit ;;
+	(ls_dbs|ls-dbs)
+		ls_dbs "$@"
+		exit
+		;;
+	(ls_tables|ls-tables) # note the plurality
+		ls_tables "$@"
+		exit
+		;;
+	(ls_table|ls-table) # note the singlularity
+		ls_table "$@"
+		exit
+		;;
+	(ls) # dispatch to proper ls_* function
+
+		if [ "$1" = --compgen ]
+		then
+			self "$TAG" ls
+			exit
+		elif [ "$2" = --compgen ]
+		then
+			self "$TAG" ls "$1"
+			exit
+		fi
+
+		if [ -z "$1" ] # no arg
+		then
+			ls_dbs "$@"
+		elif [ "${1#-}" != "$1" ] # arg starts with a dash
+		then
+			ls_dbs "$@"
+		elif [ -n "$1" -a -z "$2" ] # one arg
+		then
+			ls_tables "$@"
+		elif [ -n "$1" -a "${2#-}" != "$2" ] # one arg, but second starts with a dash
+		then
+			ls_tables "$@"
+		elif [ -n "$1" -a -n "$2" ] # two real args
+		then
+			ls_table "$@"
+		fi
+		exit
+		;;
+	(ps)	cli_mysql exec "$@" -e 'show processlist'
+		;;
+	(psw)	cli_mysql exec "$@" -e 'show full processlist'
+		;;
+	#
+	(lsps)	cli_mysql exec "$@" -e 'show full processlist' | grep -v 'Sleep' |grep -v Binlog ;;
+	#
+	(pshost)
+		cli_mysql exec "$@" -e 'show full processlist' \
+			| awk '{print $3}'|sed 's/:.*// ; s/[.].*$//' \
+			| grep -v Host | grep -v '|' | sort -f |uniq -c | sort -n
+		;;
+
+	(mycnf)
+		if [ $# -eq 0 ]
+		then
+			echo "$MYCNF"
+		# elif compgen?
+		else
+			for x in "$@"
+			do
+				extract_from_mycnf "$MYCNF" "$x"
+			done
+		fi
+		exit
+		;;
+	#
+	(admin|mysqladmin) cli_mysql mysqladmin "$@" ;;
+	#
+	(import) cli_mysql mysqlimport "$@" ;;
+	#
+	(mysqldump) cli_mysql mysqldump "$@" ;;
+	#
+	(dump) cli_mysql mysqldump --skip-lock-tables "$@" ;;
+	#
+	(fulldump-no-routines) cli_mysql mysqldump --skip-lock-tables --hex-blob --add-drop-database "$@" ;;
+	#
+	(fulldump) cli_mysql mysqldump --routines --skip-lock-tables --hex-blob --add-drop-database "$@" ;;
+	#
+	(budump)
+		# $1 is assumed to be the name of the db to dump
+		TS=$(date +%F_%H%M%S) # not %T because ":" means something to [sr]cp
+		buname="$1-$TS.sql"
+		self "$TAG" fulldump --databases "$@" > "$buname"
+		bzip2 -9v "$buname"
+		;;
+	#
+	(db)
+		if [ "$1" = --compgen ]
+		then
+			self "$TAG" ls
+			exit
+		fi
+		db="$1" ; shift
+		ls_db "$db"
+		exit
+		;;
+	#
+	(kill)
+		for x in "$@"
+		do
+			if [ "$x" = --compgen ]
+			then
+				self "$TAG" ps | awk '{print $1}' | grep -v ^Id
+				exit
+			fi
+		done
+		tid=$( echo "$@" | sed 's/ /,/g' ) # gets awkward if -u or -p is specified
+		cli_mysql exec mysqladmin "$@" kill "$tid"
+		;;
+	#
+	(mysql_version|vsmy)
+		cli_mysql "$@" -e 'select version()' |skip_first_line
+		;;
+	#
+	(mk-*)
+		if [ "$1" = --compgen ]
+		then
+			"$maatkit_bindir/$cmd" --help
+			exit
+		fi
+		cli_mysql maatkit "$cmd" "$@"
+		;;
+
+
+
+	(*)
+		exit 1
+		;;
+esac
+
+
+
+
+
+exit
+
+find_db_ports_tags
+
+extract_port_socket_from_mycnf /etc/my.cnf
+
+exit
+
+while [[ "$1" == *=* ]]
+do
+	do_assign "$1"
+	shift
+done

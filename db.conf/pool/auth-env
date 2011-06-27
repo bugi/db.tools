@@ -1,0 +1,42 @@
+# vim: set filetype=sh:
+
+function auth_env () {
+	# sets global DBUSER and DBPASSWORD vars.
+	#
+	# for this implementation, $opaque can be either "username" or "username password" or empty.
+	# if username is not included, it is assumed the vars are already set.
+	# if password is not included, it is looked for in $DBPASSWORD_$username.
+	# if both are included, the vars are set from that.
+	# surely, there must be a better way.
+	local opaque="$1" ; shift
+	if [ -z "$opaque" ]
+	then
+		echo auth arg required 1>&2
+		exit 1
+	fi
+	local user="$opaque" pw
+	if [ -z "$user" ] # user provided neither user nor pw
+	then
+		# presumably user has set DBUSER/DBPASSWORD
+		:
+	elif [ "${user#* }" != "$user" ]	# user provided a pw
+	then
+		pw="${user#* }"
+		user="${user%% *}"
+		DBUSER="$user"
+		DBPASSWORD="$pw"
+	else # user provided just a user
+		local x="$(eval echo '${DBPASSWORD_'"${user}"'}')"
+		if [ -z "$x" ] # no pw in the env for that user
+		then
+			DBUSER="$user"
+			# not setting DBPASSWORD on purpose
+		else
+			DBUSER="$user"
+			DBPASSWORD="$x"
+		fi
+	fi
+	# unexport these, for security?
+	# export -n DBUSER
+	# export -n DBPASSWORD
+	}

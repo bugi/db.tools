@@ -1,0 +1,7 @@
+function SSH () {
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$@" 2> >(grep -v 'Warning: Permanently added .* to the list of known hosts' >&2)
+	}
+
+function SCP () {
+	scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$@" 2> >(grep -v 'Warning: Permanently added .* to the list of known hosts' >&2)
+	}

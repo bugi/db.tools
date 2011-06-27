@@ -1,0 +1,12 @@
+# vim: set filetype=sh:
+
+function db_find_confs () {
+	find "$db_root" -name "$db_conf_file" $db_find_args
+	}
+
+function db_find_tokens () {
+	for f in $( find "$db_root" -name "$db_conf_file" $db_find_args )
+	do
+		dirname "$f"
+	done
+	}

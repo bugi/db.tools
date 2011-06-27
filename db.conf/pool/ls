@@ -1,0 +1,21 @@
+# vim: set filetype=sh:
+
+function ls_dbs () {
+	cli_mysql "$@" -e 'show databases' |skip_first_line
+	}
+
+function ls_db () {
+	local db="$1" ; shift
+	cli_mysql --database="$db" "$@" -e "show create database $db"'\G' |skip_first_n_lines 2 | sed 's/^Create Database: *//'
+	}
+
+function ls_tables () {
+	local db="$1" ; shift
+	cli_mysql --database="$db" "$@" -e 'show tables' |skip_first_line
+	}
+
+function ls_table () {
+	local db="$1" ; shift
+	local tbl="$1" ; shift
+	cli_mysql --database="$db" "$@" -e "show create table $tbl"'\G' |skip_first_n_lines 2 | sed 's/^Create Table: *//'
+	}

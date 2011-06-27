@@ -1,0 +1,25 @@
+# vim: set filetype=sh:
+
+function auth_set () {
+	if [ -z "$1" ]
+	then
+		warn "usage:"
+		die "eval \"\$( db auth-set 'username' )\""
+	fi
+
+	auth_cli "$@"
+cat <<EOF
+# eval this...
+export DBUSER="$DBUSER"
+export DBPASSWORD="$DBPASSWORD"
+EOF
+	}
+
+function auth_kill () {
+	local f
+	echo '# eval this...'
+	for f in $( env |grep ^DBUSER | sed 's/=.*$//' ) $( env |grep ^DBPASSWORD | sed 's/=.*$//' )
+	do
+		echo "export $f=''"
+	done
+	}

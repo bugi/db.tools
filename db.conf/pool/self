@@ -1,0 +1,7 @@
+function self () {
+	DBUSER="$DBUSER" DBPASSWORD="$DBPASSWORD" "$0" "$@"
+	}
+
+function self_exec () {
+	DBUSER="$DBUSER" DBPASSWORD="$DBPASSWORD" exec "$0" "$@"
+	}

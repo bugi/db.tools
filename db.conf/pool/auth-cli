@@ -1,0 +1,37 @@
+# vim: set filetype=sh:
+
+function auth_cli () {
+	# sets global DBUSER and DBPASSWORD vars.
+	#
+	# for this implementation, $opaque can be either "username" or "username password".
+	# if password is not included, it is prompted for.
+	# surely, there must be a better way.
+	local opaque="$1" ; shift
+	if [ -z "$opaque" ]
+	then
+		echo auth arg required 1>&2
+		exit 1
+	fi
+	local user="$opaque" pw
+	if [ "${user#* }" = "$user" ]
+	then
+		getpw=true
+	else
+		getpw=false
+		pw="${user#* }"
+		user="${user%% *}"
+	fi
+	if $getpw
+	then
+		stty -echo
+		trap "stty echo ; echo 'Interrupted' 1>&2 ; exit 1" 1 2 3 15
+		echo -n "Enter password: " 1>&2
+		read pw
+		stty echo
+		trap - 1 2 3 15
+		echo 1>&2
+	fi
+
+	DBUSER="$user"
+	DBPASSWORD="$pw"
+	}

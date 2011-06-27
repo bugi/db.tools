@@ -1,0 +1,94 @@
+# this is for the "db" script
+
+# source me in bash, then have fun with the tab key
+
+# todo:
+# completion is disabled when dbtool's remote feature is used
+
+_dbtool() {
+	local cur prev opts base
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	local f
+	for f in "${COMP_WORDS[@]}"
+	do
+		# don't even try with remote (add support later)
+		case "$f" in
+			(remote|rmt|remoteNoTTY|rmtny|remoteTTY|rmty)
+				COMPREPLY=()
+				return 1
+				;;
+		esac
+	done
+
+	case "$prev" in
+		(db)	# complete mysql instances on this host (names and ports)
+			if [ "$COMP_CWORD" -eq 1 ]
+			then
+				opts="$( db --compgen )"
+				COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+				return 0
+			fi
+			;;
+	esac
+
+	local prev2=''
+	if [ "${#COMP_WORDS[@]}" -gt 2 ]
+	then
+		prev2="${COMP_WORDS[COMP_CWORD-2]}"
+	fi
+
+	local prev3='' prev4=''
+	if [ "${#COMP_WORDS[@]}" -gt 3 ]
+	then
+		prev3="${COMP_WORDS[COMP_CWORD-3]}"
+	fi
+
+	if [ -z "$opts" -a "$prev2" = db ]
+	then
+		opts="$( db "$prev" --compgen )"
+	fi
+
+	if [ -z "$opts" -a "$prev3" = db ]
+	then
+		if opts="$( db "$prev2" "$prev" --compgen )"
+		then
+			if [ -z "$opts" ]
+			then
+				COMPREPLY=()
+				return 1
+			fi
+		else
+			return 1
+		fi
+	fi
+
+	if [ -n "$opts" ]
+	then
+		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+		return 0
+	fi
+
+	if [ "${#COMP_WORDS[@]}" -gt 4 ]
+	then
+		prev4="${COMP_WORDS[COMP_CWORD-4]}"
+	fi
+
+	if [ -z "$prev4" ]
+	then
+		return 0
+	fi
+
+	case "$prev2" in
+		(ls)	# complete table names inside a schema $prev inside a mysql instance $prev3
+			case "$prev4" in
+				(db) opts="$( db "$prev3" ls "$prev" )" ;;
+			esac ;;
+	esac
+
+	COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+	}
+
+complete -F _dbtool db

@@ -1,0 +1,19 @@
+function skip_first_n_lines () {
+	awk 'NR<='"$1"' { next } ; { print }'
+	}
+
+function skip_first_line () {
+	# awk 'NR==1 { next } ; { print }'
+	skip_first_n_lines 1
+	}
+
+function do_assign () {
+	local x="$1"
+	local y="${x#*=}"
+	x="${x%%=*}"
+	# echo "$x :: $y"
+	if [ "$x" = u ]
+	then
+		:
+	fi
+	}

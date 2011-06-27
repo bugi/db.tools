@@ -1,0 +1,129 @@
+# vim: set filetype=sh:
+
+function extract_from_mycnf () {
+	local fn="$1" ; shift
+	local fields="$1" ; shift
+	awk -F'[ \t=]+' \
+'BEGIN { x=0 }'\
+'; x == 1 && /^\[/ { exit }'\
+'; x == 1 && /^'"$fields"'[ \t=]/ { print toupper($1)"="$2 }'\
+'; /^\[mysqld\]$/ { x=1 }' \
+	< "$fn"
+	# '; x == 1 && /^'"$fields"'[ \t=]/ { print toupper($1)"='"'"'"$2"'"'"'" }'\
+	}
+
+function extract_port_socket_from_mycnf () {
+	extract_from_mycnf "$1" 'port|socket'
+	}
+
+
+function db_find () {
+	local tag_to_find="$1" ; shift
+	local d
+	for d in $( db_find_confs )
+	do
+		if [ $( grep -c "^TAG=$tag_to_find"'$' "$d" ) -eq 1 ]
+		then
+			echo "$(dirname "$d")"
+			return
+		elif [ "$( db_get_from_conf "$d" port )" = "$tag_to_find" ] # let the lookup also be by port
+		then
+			echo "$(dirname "$d")"
+			return
+		fi
+	done
+	}
+
+function db_setup () {
+	local token="$1" ; shift
+	. "$token/$db_conf_file"
+	if [ -n "$MYCNF" -a "${MYCNF#/}" = "$MYCNF" ]
+	then
+		# if MYCNF is specified relative, then it is relative to the dir in which we find our conf file.
+		# this makes it an absolute path.
+		MYCNF="$token/$MYCNF"
+	fi
+	# PORT and SOCKET may be specified via a mycnf or via the conf file
+	if [ -n "$MYCNF" -a -r "$MYCNF" -a -z "$PORT" -a -z "$SOCKET" ]
+	then
+		eval "$( extract_from_mycnf "$MYCNF" 'port|socket' )"
+	elif [ -n "$MYCNF" -a -r "$MYCNF" -a -z "$PORT" ]
+	then
+		eval "$( extract_from_mycnf "$MYCNF" 'port' )"
+	elif [ -n "$MYCNF" -a -r "$MYCNF" -a -z "$SOCKET" ]
+	then
+		eval "$( extract_from_mycnf "$MYCNF" 'socket' )"
+	else
+		echo "missing or unreadable MYCNF"
+		exit 1
+	fi
+	}
+
+function db_get_from_conf_file () {
+	# This completely ignores array values.  Those are just not queryable via this mechanism.
+	local fn="$1" ; shift
+	local x="$1" ; shift
+	d="$( grep "^${x}=" < "$fn" |tail -1 )"
+	echo "${d#*=}"
+	}
+
+function db_get_from_conf () {
+	local fn="$1" ; shift
+	local x="$1" ; shift
+	local d
+	d="$(db_get_from_conf_file "$fn" "$x")"
+	if [ -z "$d" ]
+	then
+		local MYCNF="$( db_get_from_conf_file "$fn" MYCNF )"
+		d="$( extract_from_mycnf "$MYCNF" "$x" )"
+	fi
+	echo "${d#*=}"
+	}
+
+function db_get_from_token () {
+	local token="$1" ; shift
+	local x="$1" ; shift
+	local d fn="$token/$db_conf_file"
+	db_get_from_conf "$fn" "$x"
+	}
+
+# list any tags you find
+function db_find_tags () {
+	local d
+	for d in $( grep '^TAG=' $( db_find_confs ) |tail -1 )
+	do
+		echo "${d#*=}"
+	done
+	}
+
+# list any ports you find
+function db_find_ports () {
+	local d
+	for d in $( db_find_tokens )
+	do
+		db_get_from_token "$d" port
+	done
+	}
+
+# list any ports/tags you find
+function db_find_ports_tags () {
+	local d t p
+	for d in $( db_find_confs )
+	do
+		t=$( grep '^TAG=' "$d" |tail -1)
+		p="$( db_get_from_conf "$d" port )"
+		t="${t#*=}"
+		echo "$p	$t"
+	done
+	}
+
+function db_set () {
+	local t="$1" ; shift
+	db_token="$(db_find "$t")"  # db_find has side effect of setting a lot of config vars
+	if [ -z "$db_token" ] # find_db has side effect of setting a lot of config vars
+	then
+		echo "no such db $1" 1>&2
+		exit 1
+	fi
+	db_setup "$db_token"
+	}

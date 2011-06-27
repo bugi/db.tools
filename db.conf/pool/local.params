@@ -1,0 +1,15 @@
+# vim: set filetype=sh:
+
+# users will want to fork this file
+
+
+
+db_root=/DB
+db_conf_file=dbtool_conf
+db_find_args='-mindepth 2 -maxdepth 2'
+
+
+mysql_args=( --default-character-set=utf8 )
+
+
+maatkit_bindir="$zdir/maatkit/bin"
