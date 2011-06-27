@@ -1,6 +1,19 @@
 #!/bin/bash
-# Author:  Brian Grossman <brian@SoftHome.net>
-# 30 Apr 2011	birth
+
+# This file is part of DB Tools.
+#
+# DB Tools is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DB Tools is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DB Tools.  If not, see <http://www.gnu.org/licenses/>.
 
 set -e
 
@@ -252,10 +265,10 @@ case "$arg" in
 	(mk-*)
 		if [ "$1" = --compgen ]
 		then
-			"$maatkit_bindir/$cmd" --help
+			"$maatkit_bindir/$arg" --help 1>&2
 			exit
 		fi
-		cli_mysql maatkit "$cmd" "$@"
+		cli_mysql maatkit "$arg" "$@"
 		;;
 
 
@@ -266,14 +279,6 @@ case "$arg" in
 esac
 
 
-
-
-
-exit
-
-find_db_ports_tags
-
-extract_port_socket_from_mycnf /etc/my.cnf
 
 exit
 

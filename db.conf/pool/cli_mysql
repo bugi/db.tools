@@ -1,9 +1,27 @@
 # vim: set filetype=sh:
 
+# This file is part of DB Tools.
+#
+# DB Tools is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DB Tools is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DB Tools.  If not, see <http://www.gnu.org/licenses/>.
+
+
 function cli_mysql () {
 	local args=()
+	local mode=mysql
 	local BASEDIR
 	eval "$( extract_from_mycnf "$MYCNF" basedir )"
+	local my_mysql_args=( "${mysql_args[@]}" )
 	if [ "$1" = exec ]
 	then
 		args+=( "$1" )
@@ -15,29 +33,41 @@ function cli_mysql () {
 		shift
 	elif [ "$1" = mysqladmin ]
 	then
+		mode="$1"
 		args+=( "$BASEDIR/bin/$1" )
 		shift
 	elif [ "$1" = mysqldump ]
 	then
+		mode="$1"
 		args+=( "$BASEDIR/bin/$1" )
 		shift
 	elif [ "$1" = mysqlimport ]
 	then
+		mode="$1"
 		args+=( "$BASEDIR/bin/$1" )
 		shift
 	elif [ "$1" = maatkit ]
 	then
+		mode="$1"
+		shift
 		args+=( "$maatkit_bindir/$1" )
 		shift
+		my_mysql_args=()
 	else
 		args+=( "$BASEDIR/bin/mysql" )
 	fi
 	if [ -n "$SOCKET" ]
 	then
-		args+=( --protocol=SOCKET )
+		if [ "$mode" != maatkit ]
+		then
+			args+=( --protocol=SOCKET )
+		fi
 		args+=( --socket="$SOCKET" )
 	else
-		args+=( --protocol=TCP )
+		if [ "$mode" != maatkit ]
+		then
+			args+=( --protocol=TCP )
+		fi
 		args+=( --port="$PORT" )
 	fi
 	# parse $@ for -u --username and -p and --password, and if not present use DBUSER/DBPASSWORD/similar.
@@ -53,6 +83,6 @@ function cli_mysql () {
 		UP+=( --password="$DBPASSWORD" )
 	fi
 # cat <<EOF
-	"${args[@]}" "${mysql_args[@]}" "${UP[@]}" "$@" # "$@" is last on purpose
+	"${args[@]}" "${my_mysql_args[@]}" "${UP[@]}" "$@" # "$@" is last on purpose
 # EOF
 	}
