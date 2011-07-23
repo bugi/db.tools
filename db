@@ -139,7 +139,13 @@ case "$arg" in
 		;;
 
 	(info) echo TAG:$TAG MYCNF:$MYCNF SOCKET:$SOCKET PORT:$PORT ;;
-	(cli)	cli_mysql exec "$@"
+	(cli)	if [ "$1" = --compgen ]
+		then
+			shift
+			ls_dfs "$@"
+		else
+			cli_mysql exec "$@"
+		fi
 		exit # redundant, but helps readability
 		;;
 	(tag) echo "$TAG" ; exit ;;
