@@ -144,7 +144,7 @@ case "$arg" in
 	(cli)	if [ "$1" = --compgen ]
 		then
 			shift
-			ls_dfs "$@"
+			ls_dbs "$@"
 		else
 			cli_mysql exec "$@"
 		fi
