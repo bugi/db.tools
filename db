@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2008-2011 Attributor
+# Copyright 2008-2012 Attributor
 #
 # This file is part of DB Tools.
 #
@@ -285,13 +285,3 @@ case "$arg" in
 		exit 1
 		;;
 esac
-
-
-
-exit
-
-while [[ "$1" == *=* ]]
-do
-	do_assign "$1"
-	shift
-done

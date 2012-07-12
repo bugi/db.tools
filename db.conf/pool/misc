@@ -26,14 +26,3 @@ function skip_first_n_lines () {
 function skip_first_line () {
 	skip_first_n_lines 1
 	}
-
-function do_assign () {
-	local x="$1"
-	local y="${x#*=}"
-	x="${x%%=*}"
-	# echo "$x :: $y"
-	if [ "$x" = u ]
-	then
-		:
-	fi
-	}
