@@ -9,32 +9,39 @@ Drop the db.tools directory somewhere.  Then either put this directory in your P
 
 ### db -	a command-line tool to make working with one or more mysql instances easier.
 
-- It supports tab completion.
-
-- examples:
+* It supports tab completion.
+* examples:
 
 	* list the schemata in the "foo" mysql instance
+
 		`db foo ls`
 
 	* list the mysql instances it finds on the current host
+
 		`db tag`
 
 	* list available commands in context
+
 		`db` *&lt;space&gt;* *&lt;tab&gt;*
 
 	* list the schemata in foo that start with a "b"
+
 		`db foo cli b`*&lt;tab&gt;*
 
 	* start a mysql command-line instance in the schema *bar*
+
 		`db foo cli bar`
 
 	* show table defn of *bar.acct*
+
 		`db foo ls bar acct`
 
 	* show code for setup of credentials for accessing the db as root
+
 		`db auth-set root`
 
 	* setup credentials for accessing the db as root
+
 		`eval "$( db auth-set root )"`
 
 
