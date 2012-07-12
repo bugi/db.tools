@@ -137,6 +137,10 @@ case "$arg" in
 		then
 			ls "$maatkit_bindir"/
 		fi
+		if [ -d "$percona_toolkit_bindir"/ ]
+		then
+			ls "$percona_toolkit_bindir"/
+		fi
 		exit
 		;;
 
@@ -277,6 +281,15 @@ case "$arg" in
 			exit
 		fi
 		cli_mysql maatkit "$arg" "$@"
+		;;
+	#
+	(pt-*)
+		if [ "$1" = --compgen ]
+		then
+			"$percona_toolkit_bindir/$arg" --help 1>&2
+			exit
+		fi
+		cli_mysql percona_toolkit "$arg" "$@"
 		;;
 
 
