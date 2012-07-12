@@ -13,3 +13,4 @@ mysql_args=( --default-character-set=utf8 )
 
 
 maatkit_bindir="$zdir/maatkit/bin"
+percona_toolkit_bindir="$zdir/percona-toolkit/bin"

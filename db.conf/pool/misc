@@ -1,6 +1,6 @@
 # vim: set filetype=sh:
 
-# Copyright 2008-2011 Attributor
+# Copyright 2008-2012 Attributor
 #
 # This file is part of DB Tools.
 #
@@ -20,21 +20,9 @@
 
 
 function skip_first_n_lines () {
-	awk 'NR<='"$1"' { next } ; { print }'
+	tail -n +$(( $1 + 1 ))
 	}
 
 function skip_first_line () {
-	# awk 'NR==1 { next } ; { print }'
 	skip_first_n_lines 1
-	}
-
-function do_assign () {
-	local x="$1"
-	local y="${x#*=}"
-	x="${x%%=*}"
-	# echo "$x :: $y"
-	if [ "$x" = u ]
-	then
-		:
-	fi
 	}
