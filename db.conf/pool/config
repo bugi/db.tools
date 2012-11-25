@@ -108,10 +108,13 @@ function db_get_from_token () {
 # list any tags you find
 function db_find_tags () {
 	local d
-	for d in $( grep '^TAG=' $( db_find_confs ) |tail -1 )
-	do
-		echo "${d#*=}"
-	done
+	if [ $( db_find_confs |wc -l ) -gt 0 ]
+	then
+		for d in $( grep '^TAG=' $( db_find_confs ) |tail -1 )
+		do
+			echo "${d#*=}"
+		done
+	fi
 	}
 
 # list any ports you find
