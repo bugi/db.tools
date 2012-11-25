@@ -19,11 +19,11 @@
 
 
 function db_find_confs () {
-	find "$db_root" $db_find_args -name "$db_conf_file"
+	find "$db_root"/ $db_find_args -name "$db_conf_file"
 	}
 
 function db_find_tokens () {
-	for f in $( find "$db_root" $db_find_args -name "$db_conf_file" )
+	for f in $( find "$db_root"/ $db_find_args -name "$db_conf_file" )
 	do
 		dirname "$f"
 	done
