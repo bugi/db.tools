@@ -1,6 +1,6 @@
 # vim: set filetype=sh:
 
-# Copyright 2008-2011 Attributor
+# Copyright 2008-2012 Attributor
 #
 # This file is part of DB Tools.
 #
@@ -55,21 +55,29 @@ function cli_mysql () {
 		args+=( "$maatkit_bindir/$1" )
 		shift
 		my_mysql_args=()
+	elif [ "$1" = percona_toolkit ]
+	then
+		mode="$1"
+		shift
+		args+=( "$percona_toolkit_bindir/$1" )
+		shift
+		my_mysql_args=()
+
 	else
 		args+=( "$BASEDIR/bin/mysql" )
 	fi
 	if [ -n "$SOCKET" ]
 	then
-		if [ "$mode" != maatkit ]
-		then
-			args+=( --protocol=SOCKET )
-		fi
+		case "$mode" in
+			(maatkit|percona_toolkit) ;;
+			(*) args+=( --protocol=SOCKET ) ;;
+		esac
 		args+=( --socket="$SOCKET" )
 	else
-		if [ "$mode" != maatkit ]
-		then
-			args+=( --protocol=TCP )
-		fi
+		case "$mode" in
+			(maatkit|percona_toolkit) ;;
+			(*) args+=( --protocol=TCP ) ;;
+		esac
 		args+=( --port="$PORT" )
 	fi
 	# parse $@ for -u --username and -p and --password, and if not present use DBUSER/DBPASSWORD/similar.

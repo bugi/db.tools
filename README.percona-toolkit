@@ -1,0 +1,21 @@
+- how to install percona-toolkit -
+- (for use with db tool)         -
+
+
+Go to
+        http://www.percona.com/downloads/percona-toolkit/LATEST/
+
+Select the URL of the .tar.gz one.  Download it and unpack it something like this:
+
+        wget --no-check-certificate -O- URL |tar xfz -
+
+
+
+
+cd percona-toolkit-*
+perl Makefile.PL PREFIX="$(readlink -f ..)"
+make
+make test
+make install
+cd ..
+rm -rf percona-toolkit-*     # delete the untared directory
