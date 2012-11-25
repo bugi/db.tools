@@ -13,7 +13,7 @@ Select the URL of the .tar.gz one.  Download it and unpack it something like thi
 
 
 cd percona-toolkit-*
-perl Makefile.PL PREFIX="$(readlink -f ..)"
+perl Makefile.PL PREFIX="$(readlink -f ..)/percona-toolkit"
 make
 make test
 make install
