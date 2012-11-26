@@ -130,6 +130,7 @@ case "$arg" in
 		echo info cli tag port socket
 		echo ls db
 		echo pw psw lsps pshost kill
+		echo slavestatus ss ss-behind sss ss-behind-to-zero SSS ss-behind-continual SSS-nostop
 		echo mycnf mysql_version vsmy 
 		echo budump fulldump fulldump-no-routines dump mysqldump import admin mysqladmin
 		# self "$TAG" ls "$@"
@@ -273,6 +274,88 @@ case "$arg" in
 	(mysql_version|vsmy)
 		cli_mysql "$@" -e 'select version()' |skip_first_line
 		;;
+
+	(slavestatus|ss)
+		cli_mysql "$@" -e 'show slave status\G'
+		;;
+
+	(ss-behind|sss)
+		j=$( cli_mysql "$@" -e 'show slave status\G' | grep '^ *Seconds_Behind_Master:' | sed 's/.*: *//' )
+		if [ "$j" = NULL ]
+		then
+			echo NULL
+			echo NULL
+		else
+			echo "$j p 3600 4k/p" |dc
+		fi
+		;;
+
+	(ss-behind-to-zero|SSS)
+		# tell how far behind is this slave.   like sss, but repeatedly.
+		X=5
+		if [ -n "$1" ]
+		then
+			X="$1"
+			shift
+		fi
+		j=1
+		while [ "$j" != NULL -a "$j" != 0 ]
+		do
+			j=$( cli_mysql "$@" -e 'show slave status\G' | grep '^ *Seconds_Behind_Master:' | sed 's/.*: *//' )
+			if [ "$j" = 0 ]
+			then
+				echo -ne '\r'
+				tput el
+				echo 0
+			elif [ "$j" = NULL ]
+			then
+				echo -ne '\r'
+				tput el
+				echo NULL
+			else
+				echo -ne '\r'
+				tput el
+				d=$(echo "$j 3600 4k/ 24/p" |dc)
+				h=$(echo "$j 3600 4k/p" |dc)
+				echo -n "${j}s -- ${h}h -- ${d}d"
+				echo -n " -- $( date -d @$( echo "$(date +%s) $j +p" |dc ) )"
+				if [ $j -gt 0 ]
+				then
+					sleep $X
+				fi
+			fi
+			done
+			exit
+		;;
+
+	(ss-behind-continual|SSS-nostop)
+		# tell how far behind is this slave.   like sss, but repeatedly.
+		X=5
+		if [ -n "$1" ]
+		then
+			X="$1"
+			shift
+		fi
+		j=1
+		while true
+		do
+			j=$( cli_mysql "$@" -e 'show slave status\G' | grep '^ *Seconds_Behind_Master:' | sed 's/.*: *//' )
+			echo -ne '\r'
+			tput el
+			if [ "$j" = NULL ]
+			then
+				echo -n NULL
+			elif [ "$j" -eq 0 ]
+			then
+				echo -n "$j"s
+			else
+				echo -n "$j"s -- $(echo "$j 3600 4k/p" |dc)'h'
+			fi
+			sleep $X
+		done
+		exit
+		;;
+
 	#
 	(mk-*)
 		if [ "$1" = --compgen ]
